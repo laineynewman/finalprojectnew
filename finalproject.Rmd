@@ -1,0 +1,80 @@
+---
+title: "Final Project Work"
+author: "Lainey Newman"
+date: "4/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(tidycensus)
+library(skimr)
+library(janitor)
+library(readxl)
+```
+
+
+```{r}
+
+state_unions <- read_excel("State_Union_Membership_Density_1964-2018.xlsx") %>%
+  clean_names()
+
+state_president <- read_csv("1976-2016-president.csv") %>%
+  clean_names()
+
+
+ state_unions <- state_unions %>%
+   pivot_longer(cols = c(percent_mem18, percent_mem17, percent_mem16, percent_mem15, percent_mem14, percent_mem13, percent_mem12, percent_mem11, percent_mem10, percent_mem09, percent_mem08, percent_mem07, percent_mem06, percent_mem05, percent_mem04, percent_mem03, percent_mem02, percent_mem01, percent_mem00, percent_mem99, percent_mem98, percent_mem97, percent_mem96, percent_mem95, percent_mem94, percent_mem93, percent_mem92, percent_mem91, percent_mem90, percent_mem89, percent_mem88, percent_mem87, percent_mem86, percent_mem85, percent_mem84, percent_mem83, percent_mem82, percent_mem81, percent_mem80, percent_mem79, percent_mem78, percent_mem77, percent_mem76, percent_mem75, percent_mem74, percent_mem73, percent_mem72, percent_mem71, percent_mem70, percent_mem69, percent_mem68, percent_mem67, percent_mem66, percent_mem65, percent_mem64),
+   names_to = "year", 
+   values_to = "number_members") %>%
+   na.omit()
+
+state_unions <- state_unions %>%
+  mutate(year = str_replace(year_clean, pattern = "percent_mem", replacement = "mem")) %>%
+  mutate(state = state_name)
+  
+state_unions$year_clean <- state_unions$year_clean %>%
+  str_replace(pattern = "mem1", replacement = "201") %>%
+  str_replace(pattern = "mem0", replacement = "200") %>%
+  str_replace(pattern = "mem6", replacement = "196") %>%
+  str_replace(pattern = "mem7", replacement = "197") %>%
+  str_replace(pattern = "mem8", replacement = "198") %>%
+  str_replace(pattern = "mem9", replacement = "199")
+
+state_president <- as.data.frame(state_president)
+state_unions <- as.data.frame(state_unions)
+
+state_unions$year <- as.numeric(state_unions$year_clean)
+
+data <- left_join(state_president, state_unions, by = c("year", "state"),  
+                  values_drop_na = TRUE)
+
+class(state_president$state)
+class(state_unions$state)
+class(state_president$year)
+class(state_unions$year)
+
+data <- data %>%
+  select(year, state, state_po, candidate, party, candidatevotes, totalvotes, number_members) %>%
+  filter(party == "democrat" | party == "republican") %>%
+  summarize(avg_votes = mean(candidatevotes)) %>%
+  summarize(avg_members = mean(number_members))
+
+plot1 <- ggplot(data, aes(x = year, y = avg_votes, color = party)) + geom_line()
+
+plot1
+
+plot2 <- ggplot(data, aes(x = year, y = number_members)) + geom_line()
+
+plot2
+
+```
+
+
+```{r}
+
+
+```
+
