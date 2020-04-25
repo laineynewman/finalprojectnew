@@ -115,7 +115,7 @@ plot4
 
 plot5 <- ggplot(data, aes(x = number_members, y = prop_votes)) + 
   geom_point() + 
-  geom_smooth(method = "lm") + 
+  geom_smooth(method = "lm") 
 
 plot5
 
