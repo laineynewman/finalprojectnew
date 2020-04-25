@@ -65,7 +65,13 @@ data <- data %>%
   group_by(year) %>%
   mutate(avg_members = mean(number_members)) %>%
   ungroup() %>%
-  mutate(correlation = cor(prop_votes, number_members))
+  group_by(year) %>%
+  mutate(correlation = cor(prop_votes, number_members)) %>%
+  mutate(decade = case_when(year <= 1979 ~ "1970s",
+                            year > 1979 & year <= 1988 ~ "1980s", 
+                            year > 1989 & year <= 1999 ~ "1990s",
+                            year > 1999 & year <= 2009 ~ "2000s",
+                            year > 2009 ~ "2010s"))
   
 
 plot1 <- ggplot(data, aes(x = year, y = mean_votes, color = party)) + geom_line()
@@ -96,4 +102,30 @@ plot3 <- ggplot(plot3data, aes(x = year)) +
 plot3
 
 ```
+
+
+
+```{r}
+
+regression <- lm(prop_votes ~ number_members, data = data)
+
+plot4 <- ggplot(data, aes(x = year, y = correlation)) + geom_line()
+
+plot4
+
+plot5 <- ggplot(data, aes(x = number_members, y = prop_votes)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+
+plot5
+
+plot6 <- ggplot(data, aes(x = number_members, y = prop_votes)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + facet_wrap( ~ decade)
+
+plot6
+
+```
+
+plot5: slope of the line is 0 (coefficient of lm model is basically zero), means that there isn't really a correlation between the average number of members and prop votes. There is not a strong association between the variable of number of union members and the proportional vote share of Democrats. 
 
