@@ -98,7 +98,28 @@ navbarPage("",
            ),
            tabPanel("Regional Data",
                     h3("Regional Data on Union Density"),
-                    p("Regional Data"),
+                    p("This interactive feature allows you to visualize union 
+                    density and Democratic vote trends over time in the four regions of the U.S.,
+                    as categorized by the U.S. Census Bureau. In the drop down menu, 
+                    select which region you would be interested in viewing. 
+                      That region wil appear in the graph on the right."),
+                    p("The northeast includes 
+                      Maine, New Hampshire, Vermont, 
+                      Massachusetts, Rhode Island, Connecticut, 
+                      New York, New Jersey, and Pennsylvania."),
+                    p("The midwest includes 
+                      Ohio, Michigan, Indiana, Wisconsin, Illinois, 
+                      Minnesota, Iowa, Missouri, North Dakota, 
+                      South Dakota, Nebraska, and Kansas."),
+                    p("The south includes 
+                      Delaware, Maryland, Virginia, West Virginia, 
+                      Kentucky, North Carolina, South Carolina, 
+                      Tennessee, Georgia, Florida, Alabama, Mississippi, 
+                      Arkansas, Louisiana, Texas, and Oklahoma."),
+                    p("The west includes Montana, Idaho, 
+                      Wyoming, Colorado, New Mexico, Arizona, 
+                      Utah, Nevada, California, Oregon, Washington, 
+                      Alaska, and Hawaii."),
                     sidebarLayout(
                         sidebarPanel(
                             selectInput("select_region",
