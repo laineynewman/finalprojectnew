@@ -1,12 +1,125 @@
 
 library(shiny)
 library(markdown)
-library(shinydashboard)
+library(tidyverse)
+library(tidycensus)
+library(skimr)
+library(janitor)
+library(readxl)
 
 state_vector <- unique(data$state)
 region_vector <- na.omit(unique(data$region))
 
+state_unions <- read_excel("State_Union_Membership_Density_1964-2018.xlsx") %>%
+    clean_names()
+
+state_president <- read_csv("1976-2016-president.csv") %>%
+    clean_names()
+
+state_unions <- state_unions %>%
+    pivot_longer(cols = c(percent_mem18, percent_mem17, percent_mem16, percent_mem15, percent_mem14, percent_mem13, percent_mem12, percent_mem11, percent_mem10, percent_mem09, percent_mem08, percent_mem07, percent_mem06, percent_mem05, percent_mem04, percent_mem03, percent_mem02, percent_mem01, percent_mem00, percent_mem99, percent_mem98, percent_mem97, percent_mem96, percent_mem95, percent_mem94, percent_mem93, percent_mem92, percent_mem91, percent_mem90, percent_mem89, percent_mem88, percent_mem87, percent_mem86, percent_mem85, percent_mem84, percent_mem83, percent_mem82, percent_mem81, percent_mem80, percent_mem79, percent_mem78, percent_mem77, percent_mem76, percent_mem75, percent_mem74, percent_mem73, percent_mem72, percent_mem71, percent_mem70, percent_mem69, percent_mem68, percent_mem67, percent_mem66, percent_mem65, percent_mem64),
+                 names_to = "year", 
+                 values_to = "number_members") %>%
+    na.omit()
+
+state_unions <- state_unions %>%
+    mutate(year_clean = str_replace(year, pattern = "percent_mem", replacement = "mem")) %>%
+    mutate(state = state_name)
+
+state_unions$year_clean <- state_unions$year_clean %>%
+    str_replace(pattern = "mem1", replacement = "201") %>%
+    str_replace(pattern = "mem0", replacement = "200") %>%
+    str_replace(pattern = "mem6", replacement = "196") %>%
+    str_replace(pattern = "mem7", replacement = "197") %>%
+    str_replace(pattern = "mem8", replacement = "198") %>%
+    str_replace(pattern = "mem9", replacement = "199")
+
+state_president <- as.data.frame(state_president)
+state_unions <- as.data.frame(state_unions)
+
+state_unions$year <- as.numeric(state_unions$year_clean)
+
+data <- left_join(state_president, state_unions, by = c("year", "state"),  
+                  values_drop_na = TRUE)
+
+class(state_president$state)
+class(state_unions$state)
+class(state_president$year)
+class(state_unions$year)
+
+data <- data %>%
+    select(year, state, state_po, candidate, party, candidatevotes, totalvotes, number_members) %>%
+    filter(party == "democrat" | party == "republican") %>%
+    mutate(prop_votes = candidatevotes / totalvotes) %>%
+    group_by(party, year) %>%
+    mutate(mean_votes = mean(prop_votes)) %>%
+    ungroup() %>%
+    group_by(year) %>%
+    mutate(avg_members = mean(number_members)) %>%
+    ungroup() %>%
+    group_by(year) %>%
+    mutate(correlation = cor(prop_votes, number_members)) %>%
+    mutate(decade = case_when(year <= 1979 ~ "1970s",
+                              year > 1979 & year <= 1988 ~ "1980s", 
+                              year > 1989 & year <= 1999 ~ "1990s",
+                              year > 1999 & year <= 2009 ~ "2000s",
+                              year > 2009 ~ "2010s")) %>%
+    mutate(region = ifelse(state == "Maine" |
+                               state == "New Hampshire" | 
+                               state == "Vermont" |
+                               state == "Massachusetts" |
+                               state == "Rhode Island" |
+                               state == "Connecticut" |
+                               state == "New York" | 
+                               state == "New Jersey" |
+                               state == "Pennsylvania", "northeast", 
+                           ifelse(state == "Wisconsin" | 
+                                      state == "Michigan" |
+                                      state == "Indiana" |
+                                      state == "Illinois" |
+                                      state == "Minnesota" |
+                                      state == "Iowa" |
+                                      state == "Missouri" |
+                                      state == "North Dakota" |
+                                      state == "South Dakota" |
+                                      state == "Nebraska" |
+                                      state == "Kansas" |
+                                      state == "Ohio", "midwest", 
+                                  ifelse(state == "Delaware" | 
+                                             state == "Maryland" |
+                                             state == "Virginia" |
+                                             state == "West Virginia" |
+                                             state == "Kentucky" |
+                                             state == "North Carolina" |
+                                             state == "South Carolina" |
+                                             state == "Tennessee" |
+                                             state == "Georgia" |
+                                             state == "Florida" |
+                                             state == "Alabama" |
+                                             state == "Mississippi" |
+                                             state == "Arkansas" |
+                                             state == "Louisiana" |
+                                             state == "Texas" | 
+                                             state == "Oklahoma", "south", 
+                                         ifelse(state == "Montana" |
+                                                    state == "Idaho" |
+                                                    state == "Wyoming" |
+                                                    state == "Colorado" |
+                                                    state == "New Mexico" |
+                                                    state == "Arizona" |
+                                                    state == "Utah" |
+                                                    state == "Nevada" |
+                                                    state == "California" |
+                                                    state == "Oregon" |
+                                                    state == "Washington" |
+                                                    state == "Alaska" |
+                                                    state == "Hawaii", "west", NA))))) %>%
+    group_by(year, region) %>%
+    mutate(regional_mean_votes = mean(prop_votes)) %>%
+    mutate(regional_mean_members = mean(number_members))
+
 library(markdown)
+
 ui <- fluidPage(
     titlePanel("Union Density & Democratic Vote Share in the U.S. 1976-2016"),
 navbarPage("",
