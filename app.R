@@ -1,21 +1,14 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
 library(markdown)
 library(shinydashboard)
 
 state_vector <- unique(data$state)
+region_vector <- na.omit(unique(data$region))
 
 library(markdown)
 ui <- fluidPage(
-    titlePanel("Labor Union Density in the U.S. 1976-2016"),
+    titlePanel("Union Density & Democratic Vote Share in the U.S. 1976-2016"),
 navbarPage("",
            tabPanel("About",
                     img(src = "usw.png", height = 150, width = 175),
@@ -84,11 +77,17 @@ navbarPage("",
                       to test for any relationship and to test whether certain decades
                       indicated more of a relationship than others."),
                     p(""),
-                    p("The first plot"),
+                    p("The first plot visualizes the correlation over time between Democratic vote share
+                      in presidential elections and the average number of union members per state."),
                     p(""),
                     p("The second plot visualizes the relationship between the number of 
                       members per election year in a state and the proportion of votes 
                       to the Democratic candidate each election year."),
+                    p(""),
+                    p("The third series of plots breaks down the visualization from the second
+                      graph into decades. In this, I was testing to see if there was any
+                      particular decade in which there was more of a relationship between
+                      these two variables."),
                     mainPanel(
                         plotOutput("Plot5"),
                         p(""),
@@ -102,9 +101,9 @@ navbarPage("",
                     p("Regional Data"),
                     sidebarLayout(
                         sidebarPanel(
-                            selectInput("select_state",
+                            selectInput("select_region",
                                         "Select Region",
-                                        choices = state_vector)
+                                        choices = region_vector)
                         ),
                         mainPanel(
                             plotOutput("Plot2")
@@ -146,7 +145,8 @@ server <- function(input, output) {
             geom_line(aes(y = number_members, color = "Union Density")) + 
             geom_line(aes(y = prop_votes * 100, color = "Democratic Vote Share")) +
             labs(y = "Percent") + 
-            ggtitle(input$select_state)
+            ggtitle(input$select_state) +
+            theme_bw()
 
     })
     
@@ -154,13 +154,13 @@ server <- function(input, output) {
         data %>%
             filter(party == "democrat") %>%
             ungroup(year) %>%
-            group_by(state) %>%
-            filter(state == input$select_state) %>%
+            group_by(region) %>%
+            filter(region == input$select_region) %>%
             ggplot(aes(x = year)) +
-            geom_line(aes(y = number_members, color = "Union Density")) + 
-            geom_line(aes(y = prop_votes * 100, color = "Democratic Vote Share")) +
+            geom_line(aes(y = regional_mean_members, color = "Union Density")) + 
+            geom_line(aes(y = regional_mean_votes * 100, color = "Democratic Vote Share")) +
             labs(y = "Percent") + 
-            ggtitle(input$select_state) +
+            ggtitle(input$select_region) +
             theme_bw()
         
     })
@@ -170,9 +170,9 @@ server <- function(input, output) {
             ggplot(aes(x = number_members, y = prop_votes)) + 
             geom_point() + 
             geom_smooth(method = "lm") +
-            ggtitle("Visualization of Correlation Over Time Between Union Density \nand Democratic Vote Share") +
+            ggtitle("Visualization of Regression Over Time Between Union Density \nand Democratic Vote Share") +
             theme_bw() +
-            labs(x = "Average Number of Union Members in Each State Over Time",
+            labs(x = "Average Percent of State that is Unionized Over Time",
                  y = "Average Proportion of Democratic Vote Share Per State Over Time")
         
     })
@@ -182,14 +182,19 @@ server <- function(input, output) {
             ggplot(aes(x = number_members, y = prop_votes)) + 
             geom_point() + 
             geom_smooth(method = "lm") + facet_wrap( ~ decade) +
-            theme_bw()
+            theme_bw() +
+            ggtitle("Regression Broken Down by Decade") +
+            labs(y = "Proportion of Democratic Vote Share",
+                 x = "Percent of State that is Unionized")
     })
     
     output$Plot5 <- renderPlot({
         data %>%
             ggplot(aes(x = year, y = correlation)) + 
             geom_line() +
-            theme_bw()
+            theme_bw() +
+            ggtitle("Correlation Between Union Density and Democratic Vote Share Over Time") +
+            labs(x = "Year", y = "Correlation Coefficient")
     })
 }
 

@@ -71,7 +71,60 @@ data <- data %>%
                             year > 1979 & year <= 1988 ~ "1980s", 
                             year > 1989 & year <= 1999 ~ "1990s",
                             year > 1999 & year <= 2009 ~ "2000s",
-                            year > 2009 ~ "2010s"))
+                            year > 2009 ~ "2010s")) %>%
+  mutate(region = ifelse(state == "Maine" |
+                           state == "New Hampshire" | 
+                           state == "Vermont" |
+                           state == "Massachusetts" |
+                           state == "Rhode Island" |
+                           state == "Connecticut" |
+                           state == "New York" | 
+                           state == "New Jersey" |
+                           state == "Pennsylvania", "northeast", 
+                         ifelse(state == "Wisconsin" | 
+                                  state == "Michigan" |
+                                  state == "Indiana" |
+                                  state == "Illinois" |
+                                  state == "Minnesota" |
+                                  state == "Iowa" |
+                                  state == "Missouri" |
+                                  state == "North Dakota" |
+                                  state == "South Dakota" |
+                                  state == "Nebraska" |
+                                  state == "Kansas" |
+                                  state == "Ohio", "midwest", 
+                                ifelse(state == "Delaware" | 
+                                         state == "Maryland" |
+                                         state == "Virginia" |
+                                         state == "West Virginia" |
+                                         state == "Kentucky" |
+                                         state == "North Carolina" |
+                                         state == "South Carolina" |
+                                         state == "Tennessee" |
+                                         state == "Georgia" |
+                                         state == "Florida" |
+                                         state == "Alabama" |
+                                         state == "Mississippi" |
+                                         state == "Arkansas" |
+                                         state == "Louisiana" |
+                                         state == "Texas" | 
+                                         state == "Oklahoma", "south", 
+                                       ifelse(state == "Montana" |
+                                                state == "Idaho" |
+                                                state == "Wyoming" |
+                                                state == "Colorado" |
+                                                state == "New Mexico" |
+                                                state == "Arizona" |
+                                                state == "Utah" |
+                                                state == "Nevada" |
+                                                state == "California" |
+                                                state == "Oregon" |
+                                                state == "Washington" |
+                                                state == "Alaska" |
+                                                state == "Hawaii", "west", NA))))) %>%
+  group_by(year, region) %>%
+  mutate(regional_mean_votes = mean(prop_votes)) %>%
+  mutate(regional_mean_members = mean(number_members))
   
 
 plot1 <- ggplot(data, aes(x = year, y = mean_votes, color = party)) + geom_line()
@@ -93,6 +146,7 @@ plot3data <- data %>%
   group_by(state)
 
 state_vector <- unique(plot3data$state)
+region_vector <- na.omit(unique(data$region))
 
 plot3 <- ggplot(plot3data, aes(x = year)) + 
   geom_line(aes(y = number_members, color = "Union Density")) + 
