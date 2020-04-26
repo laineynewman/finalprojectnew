@@ -7,118 +7,10 @@ library(skimr)
 library(janitor)
 library(readxl)
 
-state_vector <- unique(data$state)
-region_vector <- na.omit(unique(data$region))
+finaldata <- read_csv("finaldata.csv")
 
-state_unions <- read_excel("State_Union_Membership_Density_1964-2018.xlsx") %>%
-    clean_names()
-
-state_president <- read_csv("1976-2016-president.csv") %>%
-    clean_names()
-
-state_unions <- state_unions %>%
-    pivot_longer(cols = c(percent_mem18, percent_mem17, percent_mem16, percent_mem15, percent_mem14, percent_mem13, percent_mem12, percent_mem11, percent_mem10, percent_mem09, percent_mem08, percent_mem07, percent_mem06, percent_mem05, percent_mem04, percent_mem03, percent_mem02, percent_mem01, percent_mem00, percent_mem99, percent_mem98, percent_mem97, percent_mem96, percent_mem95, percent_mem94, percent_mem93, percent_mem92, percent_mem91, percent_mem90, percent_mem89, percent_mem88, percent_mem87, percent_mem86, percent_mem85, percent_mem84, percent_mem83, percent_mem82, percent_mem81, percent_mem80, percent_mem79, percent_mem78, percent_mem77, percent_mem76, percent_mem75, percent_mem74, percent_mem73, percent_mem72, percent_mem71, percent_mem70, percent_mem69, percent_mem68, percent_mem67, percent_mem66, percent_mem65, percent_mem64),
-                 names_to = "year", 
-                 values_to = "number_members") %>%
-    na.omit()
-
-state_unions <- state_unions %>%
-    mutate(year_clean = str_replace(year, pattern = "percent_mem", replacement = "mem")) %>%
-    mutate(state = state_name)
-
-state_unions$year_clean <- state_unions$year_clean %>%
-    str_replace(pattern = "mem1", replacement = "201") %>%
-    str_replace(pattern = "mem0", replacement = "200") %>%
-    str_replace(pattern = "mem6", replacement = "196") %>%
-    str_replace(pattern = "mem7", replacement = "197") %>%
-    str_replace(pattern = "mem8", replacement = "198") %>%
-    str_replace(pattern = "mem9", replacement = "199")
-
-state_president <- as.data.frame(state_president)
-state_unions <- as.data.frame(state_unions)
-
-state_unions$year <- as.numeric(state_unions$year_clean)
-
-data <- left_join(state_president, state_unions, by = c("year", "state"),  
-                  values_drop_na = TRUE)
-
-class(state_president$state)
-class(state_unions$state)
-class(state_president$year)
-class(state_unions$year)
-
-data <- data %>%
-    select(year, state, state_po, candidate, party, candidatevotes, totalvotes, number_members) %>%
-    filter(party == "democrat" | party == "republican") %>%
-    mutate(prop_votes = candidatevotes / totalvotes) %>%
-    group_by(party, year) %>%
-    mutate(mean_votes = mean(prop_votes)) %>%
-    ungroup() %>%
-    group_by(year) %>%
-    mutate(avg_members = mean(number_members)) %>%
-    ungroup() %>%
-    group_by(year) %>%
-    mutate(correlation = cor(prop_votes, number_members)) %>%
-    mutate(decade = case_when(year <= 1979 ~ "1970s",
-                              year > 1979 & year <= 1988 ~ "1980s", 
-                              year > 1989 & year <= 1999 ~ "1990s",
-                              year > 1999 & year <= 2009 ~ "2000s",
-                              year > 2009 ~ "2010s")) %>%
-    mutate(region = ifelse(state == "Maine" |
-                               state == "New Hampshire" | 
-                               state == "Vermont" |
-                               state == "Massachusetts" |
-                               state == "Rhode Island" |
-                               state == "Connecticut" |
-                               state == "New York" | 
-                               state == "New Jersey" |
-                               state == "Pennsylvania", "northeast", 
-                           ifelse(state == "Wisconsin" | 
-                                      state == "Michigan" |
-                                      state == "Indiana" |
-                                      state == "Illinois" |
-                                      state == "Minnesota" |
-                                      state == "Iowa" |
-                                      state == "Missouri" |
-                                      state == "North Dakota" |
-                                      state == "South Dakota" |
-                                      state == "Nebraska" |
-                                      state == "Kansas" |
-                                      state == "Ohio", "midwest", 
-                                  ifelse(state == "Delaware" | 
-                                             state == "Maryland" |
-                                             state == "Virginia" |
-                                             state == "West Virginia" |
-                                             state == "Kentucky" |
-                                             state == "North Carolina" |
-                                             state == "South Carolina" |
-                                             state == "Tennessee" |
-                                             state == "Georgia" |
-                                             state == "Florida" |
-                                             state == "Alabama" |
-                                             state == "Mississippi" |
-                                             state == "Arkansas" |
-                                             state == "Louisiana" |
-                                             state == "Texas" | 
-                                             state == "Oklahoma", "south", 
-                                         ifelse(state == "Montana" |
-                                                    state == "Idaho" |
-                                                    state == "Wyoming" |
-                                                    state == "Colorado" |
-                                                    state == "New Mexico" |
-                                                    state == "Arizona" |
-                                                    state == "Utah" |
-                                                    state == "Nevada" |
-                                                    state == "California" |
-                                                    state == "Oregon" |
-                                                    state == "Washington" |
-                                                    state == "Alaska" |
-                                                    state == "Hawaii", "west", NA))))) %>%
-    group_by(year, region) %>%
-    mutate(regional_mean_votes = mean(prop_votes)) %>%
-    mutate(regional_mean_members = mean(number_members))
-
-library(markdown)
+state_vector <- unique(finaldata$state)
+region_vector <- na.omit(unique(finaldata$region))
 
 ui <- fluidPage(
     titlePanel("Union Density & Democratic Vote Share in the U.S. 1976-2016"),
@@ -137,11 +29,11 @@ navbarPage("",
                     h3("Background about this Data Analysis"),
                     p("For my final project for Gov 1005, I decided to focus on union density 
                       over time in the United States. This is related to my thesis topic, which is
-                      described below. In my data analyses on this page, I look at national, regional,
+                      described below. In my finaldata analyses on this page, I look at national, regional,
                       and state-level trends regarding union density and Democratic presidential
-                      vote share. For the election returns data, I used state-level presidential election returns from the Statistics 
+                      vote share. For the election returns finaldata, I used state-level presidential election returns from the Statistics 
                       of the Congressional Election, published by the U.S. House of Representatives. 
-                      For the union density data, I used Barry T. Hirsch, David A. Macpherson, and Wayne G. Vroman's “Estimates of Union Density by State,” 
+                      For the union density finaldata, I used Barry T. Hirsch, David A. Macpherson, and Wayne G. Vroman's “Estimates of Union Density by State,” 
                       from the Monthly Labor Review (obtained via NPR)."),
                     h3("Why I Chose This Topic"),
                     p("Throughout much of American history, labor unions have played a 
@@ -162,7 +54,7 @@ navbarPage("",
                     has increased. In 1992, union households supported the Democratic 
                     presidential candidate over the Republican candidate by a margin of 
                     31 percentage points. As of 2016, that gap narrowed to 8 percentage 
-                    points. This phenomenon has occurred despite data that have suggested 
+                    points. This phenomenon has occurred despite finaldata that have suggested 
                     that labor unions are becoming increasingly diverse."),
                     p(""),
                     p("The research topic that am studying for my senior thesis 
@@ -186,7 +78,7 @@ navbarPage("",
                       union density and Democratic vote share over time at the national level. 
                       Though union density definitely plays a role in Democratic vote share, many,
                       many other things do as well. That being said, I believe it was hard to see
-                      any trend at the national level with this data. I still ran several models
+                      any trend at the national level with this finaldata. I still ran several models
                       to test for any relationship and to test whether certain decades
                       indicated more of a relationship than others."),
                     p(""),
@@ -270,7 +162,7 @@ navbarPage("",
 server <- function(input, output) {
     
     output$Plot1 <- renderPlot({
-        data %>%
+        finaldata %>%
             filter(party == "democrat") %>%
             ungroup(year) %>%
             group_by(state) %>%
@@ -285,7 +177,7 @@ server <- function(input, output) {
     })
     
     output$Plot2 <- renderPlot({
-        data %>%
+        finaldata %>%
             filter(party == "democrat") %>%
             ungroup(year) %>%
             group_by(region) %>%
@@ -300,7 +192,7 @@ server <- function(input, output) {
     })
     
     output$Plot3 <- renderPlot({
-        data %>%
+        finaldata %>%
             ggplot(aes(x = number_members, y = prop_votes)) + 
             geom_point() + 
             geom_smooth(method = "lm") +
@@ -312,7 +204,7 @@ server <- function(input, output) {
     })
     
     output$Plot4 <- renderPlot({
-        data %>%
+        finaldata %>%
             ggplot(aes(x = number_members, y = prop_votes)) + 
             geom_point() + 
             geom_smooth(method = "lm") + facet_wrap( ~ decade) +
@@ -323,7 +215,7 @@ server <- function(input, output) {
     })
     
     output$Plot5 <- renderPlot({
-        data %>%
+        finaldata %>%
             ggplot(aes(x = year, y = correlation)) + 
             geom_line() +
             theme_bw() +

@@ -125,6 +125,8 @@ data <- data %>%
   group_by(year, region) %>%
   mutate(regional_mean_votes = mean(prop_votes)) %>%
   mutate(regional_mean_members = mean(number_members))
+
+write_csv(data, "finaldata.csv")
   
 
 plot1 <- ggplot(data, aes(x = year, y = mean_votes, color = party)) + geom_line()
